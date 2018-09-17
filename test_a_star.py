@@ -1,6 +1,6 @@
 import unittest
 import a_star
-from Cell import CellType
+from CellType import CellType
 
 
 class TestAStar(unittest.TestCase):
@@ -11,7 +11,7 @@ class TestAStar(unittest.TestCase):
     # 'B', '.', '.', '.', '.'
 
     def test_load_board(self):
-        board, initial_state, goal_state = a_star.load_board('board-test.txt')
+        board, initial_state, goal_state = a_star.load_board('board-test-1.txt')
 
         self.assertEqual(len(board), 3)
         self.assertEqual(len(board[0]), 5)
@@ -22,7 +22,7 @@ class TestAStar(unittest.TestCase):
         self.assertEqual(goal_state, (0, 2))
 
     def test_initialize_board(self):
-        board, initial_state, goal_state = a_star.load_board('board-test.txt')
+        board, initial_state, goal_state = a_star.load_board('board-test-1.txt')
         board = a_star.initialize_board(board, goal_state)
 
         # ================ NEIGHBORS ================ #

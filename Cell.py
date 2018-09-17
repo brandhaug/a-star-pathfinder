@@ -1,18 +1,6 @@
 from math import sqrt
 
-from enum import Enum
-
-
-class CellType(Enum):
-    floor = '.'
-    obstacle = '#'
-    initial_state = 'A'
-    goal_state = 'B'
-    water = 'w'
-    mountain = 'm'
-    forest = 'f'
-    grass = 'g'
-    road = 'r'
+from CellType import CellType
 
 
 class Cell:
@@ -25,7 +13,7 @@ class Cell:
         self.f_score = 0
         self.neighbors = []
         self.previous_cell = None
-        self.color, self.outline, self.cost = self.calculate_color_and_cost()
+        self.color, self.outline, self.path_cost = self.calculate_color_and_cost()
 
     def calculate_color_and_cost(self):
         if self.type is CellType.floor.value:
@@ -49,11 +37,11 @@ class Cell:
         else:
             return '#e426ff', 'black', 1
 
-    def initialize(self, board, goal_state_coordinates):
+    def initialize(self, board, goal_state_coordinates, current_g_score):
         if self.type is '#':
             print('CellType is obstacle')
         else:
-            self.g_score = self.cost  # The cost of the path from the start node to n
+            self.g_score = self.path_cost + current_g_score  # The cost of the path from the start node to n
             self.h_score = self.calculate_manhattan_distance(
                 goal_state_coordinates)  # Heuristic function that estimates the cost of the cheapest path from n to the goal
             self.f_score = self.g_score + self.h_score  # f(n) = g(n) + h(n)
@@ -113,10 +101,6 @@ class Cell:
             neighbors.append(board[self.y][self.x - 1])
 
         return neighbors
-
-    def update_g_score(self, g_score):
-        self.g_score = g_score
-        self.f_score = self.g_score + self.h_score
 
     def __lt__(self, other):
         return self.f_score < other.f_score

@@ -25,9 +25,6 @@ def load_board(board_name):
             print('line', line)
             line_list = []
             for x, char in enumerate(line):
-                # print(x)
-                # print(char)
-
                 cell = Cell(x, y, char)
 
                 if char is initial_state_coordinates_symbol:
@@ -48,20 +45,7 @@ def load_board(board_name):
     return board, initial_state_coordinates, goal_state_coordinates
 
 
-# Initializes each cell from board
-# Calculates heuristic cost estimate
-# Calculates neighbors
-# Returns 2d board with cell objects
-def initialize_board(board, goal_state_coordinates):
-    print('========= Initializing board =========')
-    for y, row in enumerate(board):
-        for x, cell in enumerate(row):
-            cell.initialize(board, goal_state_coordinates)
-
-    return board
-
-
-def draw_path(path):
+def draw_path(path, open_set, closed_set):
     for cell in path:
         canvas.create_oval((cell_width * cell.x) + (cell_width / 4),
                            (cell_height * cell.y) + (cell_height / 4),
@@ -69,37 +53,43 @@ def draw_path(path):
                            (cell_height * cell.y) + cell_height - (cell_height / 4),
                            fill="black")
 
+    canvas.create_text(board_width + 80, 80,
+                       text='Total f score: ' + str(path[0].f_score))
+    canvas.create_text(board_width + 80, 100,
+                       text='Path length: ' + str(len(path)))
 
-def reconstruct_path(current_cell):
+    canvas.create_text(board_width + 80, 140,
+                       text='Open set length: ' + str(len(open_set)))
+
+    canvas.create_text(board_width + 80, 160,
+                       text='Closed set length: ' + str(len(closed_set)))
+
+
+
+def reconstruct_path(current_cell, open_set, closed_set):
     cell = current_cell
     path = []
 
-    while cell.previous_cell:
+    while cell:
         path.append(cell)
         cell = cell.previous_cell
 
-    path.append(cell)
-
-    draw_path(path)
-    return []
+    draw_path(path, open_set, closed_set)
+    return path
 
 
 def start_a_star(sleeping_time):
     current_cell = board[initial_state_coordinates[1]][initial_state_coordinates[0]]
-    initialized = False
+    current_cell.initialize(board, goal_state_coordinates, current_cell.g_score)
 
-    # Open set contains floors not yet visited
-    open_set = [current_cell]
-    heapq.heapify(open_set)
+    open_set = [current_cell]  # Open set contains floors not yet visited
+    heapq.heapify(open_set)  # Making open set a heap prioritized by f_score (see __lt__ method in Cell)
 
-    # Closed set contains floors already visited
-    closed_set = []
+    closed_set = []  # Closed set contains floors already visited
 
-    while open_set or initialized is False:
-        initialized = True
+    while open_set:
         print('========= Open set exists - Looping =========')
         print('Current cell: ' + str((current_cell.x, current_cell.y)))
-        print('Goal_state coords: ' + str(goal_state_coordinates))
 
         print('Removing current cell from open set')
         heapq.heappop(open_set)
@@ -107,57 +97,35 @@ def start_a_star(sleeping_time):
         print('Adding current cell to closed set')
         closed_set.append(current_cell)
 
+        time.sleep(sleeping_time)
+        render(board, current_cell, open_set, closed_set)
+
         if current_cell.type is CellType.goal_state.value:
             print('Optimal solution found!')
-            return reconstruct_path(current_cell)
-
-        # lowest_cost_neighbor = None
+            return reconstruct_path(current_cell, open_set, closed_set)
 
         print('Looping through current cell\'s neighbors')
         for neighbor in current_cell.neighbors:
             print('Checking neighbor: ' + str((neighbor.x, neighbor.y)))
             if neighbor in closed_set:
                 print('Neighbor already evaluated')
-                continue  # Ignore the neighbor which is already evaluated.
-
-            if neighbor in open_set:
+                continue
+            elif neighbor in open_set:
                 print('Neighbor already in open set')
                 continue
 
-            neighbor.update_g_score(current_cell.g_score + neighbor.cost)
+            neighbor.initialize(board, goal_state_coordinates, current_cell.g_score)
             neighbor.previous_cell = current_cell
             heapq.heappush(open_set, neighbor)
-
-            # if lowest_cost_neighbor is None or lowest_cost_neighbor.f_score > neighbor.f_score:
-            #     print('Lowest cost neighbor: ' + str((neighbor.x, neighbor.y)))
-            #     lowest_cost_neighbor = neighbor
-            # else:
-            #     print('Better neighbor already found')
-
-        time.sleep(sleeping_time)
-        draw(board, current_cell, open_set, closed_set)
 
         if open_set:
             print('Switching current cell to the one with lowest f_score')
             current_cell = open_set[0]
+        else:
+            print('No solutions')
 
 
-
-        # if lowest_cost_neighbor is None and open_set:
-        #     print('Can\'t find any neighbor not visited, going back to open set')
-        #     current_cell = open_set[-1]  # Switching to last added cell in open set
-        # elif lowest_cost_neighbor is not None:
-        #     print('The lowest cost neighbor is not discovered before')
-        #     previous_cell = current_cell
-        #     lowest_cost_neighbor.previous_cell = previous_cell
-        #     current_cell = lowest_cost_neighbor
-        # else:
-        #     print('None lowest_cost_neighbor and empty open set')
-
-    print('No solutions')
-
-
-def draw(board, current_cell, open_set, closed_set):
+def render(board, current_cell, open_set, closed_set):
     canvas.delete("all")
 
     for y, row in enumerate(board):
@@ -165,10 +133,11 @@ def draw(board, current_cell, open_set, closed_set):
             canvas.create_rectangle(cell_width * x, cell_height * y, (cell_width * x) + cell_width,
                                     (cell_height * y) + cell_height,
                                     fill=element.color, outline=element.outline)
-            canvas.create_text(cell_width * x + 20, cell_height * y + 20, text='g: ' + str(element.g_score))
-            canvas.create_text(cell_width * x + 20, cell_height * y + 40, text='h: ' + str(element.h_score))
-            canvas.create_text(cell_width * x + 20, cell_height * y + 60, text='f: ' + str(element.f_score))
-            canvas.create_text(cell_width * x + 20, cell_height * y + 80, text=str((x, y)))
+            # if element.f_score > 0:
+            #     canvas.create_text(cell_width * x + 20, cell_height * y + 20, text='g: ' + str(element.g_score))
+            #     canvas.create_text(cell_width * x + 20, cell_height * y + 40, text='h: ' + str(element.h_score))
+            #     canvas.create_text(cell_width * x + 20, cell_height * y + 60, text='f: ' + str(element.f_score))
+            #     canvas.create_text(cell_width * x + 20, cell_height * y + 80, text=str((x, y)))
 
     # Open set (light blue), lowest_f_score (cyan)
     for i, cell in enumerate(open_set):
@@ -176,13 +145,13 @@ def draw(board, current_cell, open_set, closed_set):
             canvas.create_rectangle(cell_width * cell.x,
                                     cell_height * cell.y,
                                     (cell_width * cell.x) + cell_width,
-                                    (cell_height * cell.y) + (cell_height / 10),
+                                    (cell_height * cell.y) + (cell_height / 8),
                                     fill="cyan", outline="black")
         else:
             canvas.create_rectangle(cell_width * cell.x,
                                     cell_height * cell.y,
                                     (cell_width * cell.x) + cell_width,
-                                    (cell_height * cell.y) + (cell_height / 10),
+                                    (cell_height * cell.y) + (cell_height / 8),
                                     fill="blue", outline="black")
 
     # Closed set (light red)
@@ -190,7 +159,7 @@ def draw(board, current_cell, open_set, closed_set):
         canvas.create_rectangle(cell_width * cell.x,
                                 cell_height * cell.y,
                                 (cell_width * cell.x) + cell_width,
-                                (cell_height * cell.y) + (cell_height / 10),
+                                (cell_height * cell.y) + (cell_height / 8),
                                 fill="#ffb2b2", outline="black")
 
     # Current cell
@@ -213,22 +182,27 @@ def draw(board, current_cell, open_set, closed_set):
     root.update()
 
 
+board, initial_state_coordinates, goal_state_coordinates = load_board('board-test-3.txt')
+
 root = Tk()
 root.title('A* Algorithm')
 
 canvas_width = 1820
-canvas_height = 1000
 board_width = 1650
 board_height = 1000
 
-canvas = Canvas(root, width=canvas_width, height=canvas_height)
-canvas.pack()
-
-board, initial_state_coordinates, goal_state_coordinates = load_board('board-2-4.txt')
-board = initialize_board(board, goal_state_coordinates)
-
 cell_height = board_height / len(board)
 cell_width = board_width / len(board[0])
+
+if cell_height > cell_width:
+    cell_height = cell_width
+else:
+    cell_width = cell_height
+
+canvas_height = cell_height * len(board)
+
+canvas = Canvas(root, width=canvas_width, height=canvas_height)
+canvas.pack()
 
 start_a_star(0)
 
