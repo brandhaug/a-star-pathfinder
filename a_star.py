@@ -47,11 +47,10 @@ def load_board(board_name):
 
 def draw_path(path, open_set, closed_set):
     for cell in path:
-        canvas.create_oval((cell_width * cell.x) + (cell_width / 4),
-                           (cell_height * cell.y) + (cell_height / 4),
-                           (cell_width * cell.x) + cell_width - (cell_width / 4),
-                           (cell_height * cell.y) + cell_height - (cell_height / 4),
-                           fill="black")
+        canvas.create_text(cell_width * cell.x + (cell_width / 2),
+                           cell_height * cell.y + (cell_height / 2),
+                           font=("Helvetica", 18),
+                           text="⬤")
 
     canvas.create_text(board_width + 80, 80,
                        text='Total f score: ' + str(path[0].f_score))
@@ -63,7 +62,6 @@ def draw_path(path, open_set, closed_set):
 
     canvas.create_text(board_width + 80, 160,
                        text='Closed set length: ' + str(len(closed_set)))
-
 
 
 def reconstruct_path(current_cell, open_set, closed_set):
@@ -125,6 +123,52 @@ def start_a_star(sleeping_time):
             print('No solutions')
 
 
+def start_breadth_first(sleeping_time):
+    current_cell = board[initial_state_coordinates[1]][initial_state_coordinates[0]]
+    current_cell.initialize(board, goal_state_coordinates, current_cell.g_score)
+
+    open_set = [current_cell]  # Open set contains floors not yet visited
+
+    closed_set = []  # Closed set contains floors already visited
+
+    while open_set:
+        print('========= Open set exists - Looping =========')
+        print('Current cell: ' + str((current_cell.x, current_cell.y)))
+
+        print('Removing current cell from open set')
+        open_set.remove(current_cell)
+
+        print('Adding current cell to closed set')
+        closed_set.append(current_cell)
+
+        time.sleep(sleeping_time)
+        render(board, current_cell, open_set, closed_set)
+
+        if current_cell.type is CellType.goal_state.value:
+            print('Solution found!')
+            return reconstruct_path(current_cell, open_set, closed_set)
+
+        print('Looping through current cell\'s neighbors')
+        for neighbor in current_cell.neighbors:
+            print('Checking neighbor: ' + str((neighbor.x, neighbor.y)))
+            if neighbor in closed_set:
+                print('Neighbor already evaluated')
+                continue
+            elif neighbor in open_set:
+                print('Neighbor already in open set')
+                continue
+
+            neighbor.initialize(board, goal_state_coordinates, current_cell.g_score)
+            neighbor.previous_cell = current_cell
+            open_set.append(neighbor)
+
+        if open_set:
+            print('Switching current cell to the one with lowest f_score')
+            current_cell = open_set[0]
+        else:
+            print('No solutions')
+
+
 def render(board, current_cell, open_set, closed_set):
     canvas.delete("all")
 
@@ -139,35 +183,23 @@ def render(board, current_cell, open_set, closed_set):
             #     canvas.create_text(cell_width * x + 20, cell_height * y + 60, text='f: ' + str(element.f_score))
             #     canvas.create_text(cell_width * x + 20, cell_height * y + 80, text=str((x, y)))
 
-    # Open set (light blue), lowest_f_score (cyan)
-    for i, cell in enumerate(open_set):
-        if i is 0:
-            canvas.create_rectangle(cell_width * cell.x,
-                                    cell_height * cell.y,
-                                    (cell_width * cell.x) + cell_width,
-                                    (cell_height * cell.y) + (cell_height / 8),
-                                    fill="cyan", outline="black")
-        else:
-            canvas.create_rectangle(cell_width * cell.x,
-                                    cell_height * cell.y,
-                                    (cell_width * cell.x) + cell_width,
-                                    (cell_height * cell.y) + (cell_height / 8),
-                                    fill="blue", outline="black")
-
     # Closed set (light red)
     for cell in closed_set:
-        canvas.create_rectangle(cell_width * cell.x,
-                                cell_height * cell.y,
-                                (cell_width * cell.x) + cell_width,
-                                (cell_height * cell.y) + (cell_height / 8),
-                                fill="#ffb2b2", outline="black")
+        canvas.create_text(cell_width * cell.x + (cell_width / 2),
+                           cell_height * cell.y + (cell_height / 2),
+                           font=("Helvetica", 16),
+                           text="✕")
 
+    for cell in open_set:
+        canvas.create_text(cell_width * cell.x + (cell_width / 2),
+                           cell_height * cell.y + (cell_height / 2),
+                           font=("Helvetica", 16),
+                           text="★")
     # Current cell
-    canvas.create_oval((cell_width * current_cell.x) + (cell_width / 4),
-                       (cell_height * current_cell.y) + (cell_height / 4),
-                       (cell_width * current_cell.x) + cell_width - (cell_width / 4),
-                       (cell_height * current_cell.y) + cell_height - (cell_height / 4),
-                       fill="black")
+    canvas.create_text(cell_width * current_cell.x + (cell_width / 2),
+                       cell_height * current_cell.y + (cell_height / 2),
+                       font=("Helvetica", 18),
+                       text="⬤")
 
     canvas.create_rectangle(board_width, 0, canvas_width, canvas_height, fill="#DDDDDD")
     canvas.create_text(board_width + 80, 20, text='Current cell: ' + str((current_cell.x, current_cell.y)))
@@ -177,18 +209,19 @@ def render(board, current_cell, open_set, closed_set):
                            text='Previous cell: None')
     else:
         canvas.create_text(board_width + 80, 40,
-                           text='Previous cell: ' + str((current_cell.previous_cell.x, current_cell.previous_cell.y)))
+                           text='Previous cell: ' + str(
+                               (current_cell.previous_cell.x, current_cell.previous_cell.y)))
 
     root.update()
 
 
-board, initial_state_coordinates, goal_state_coordinates = load_board('board-test-3.txt')
+board, initial_state_coordinates, goal_state_coordinates = load_board('board-2-4.txt')
 
 root = Tk()
 root.title('A* Algorithm')
 
 canvas_width = 1820
-board_width = 1650
+board_width = canvas_width - 170
 board_height = 1000
 
 cell_height = board_height / len(board)
@@ -205,5 +238,6 @@ canvas = Canvas(root, width=canvas_width, height=canvas_height)
 canvas.pack()
 
 start_a_star(0)
+# start_breadth_first(0)
 
 root.mainloop()

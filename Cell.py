@@ -102,5 +102,10 @@ class Cell:
 
         return neighbors
 
+    # For a star
     def __lt__(self, other):
         return self.f_score < other.f_score
+
+    # For dijkstra
+    # def __lt__(self, other):
+    #     return self.g_score < other.g_score

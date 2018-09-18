@@ -17,13 +17,13 @@ class TestAStar(unittest.TestCase):
         self.assertEqual(len(board[0]), 5)
         self.assertEqual(board[1][2].x, 2)
         self.assertEqual(board[1][2].y, 1)
-        self.assertEqual(board[1][2].type, '.')
+        self.assertEqual(board[1][2].type, CellType.floor.value)
         self.assertEqual(initial_state, (3, 0))
         self.assertEqual(goal_state, (0, 2))
 
     def test_initialize_board(self):
         board, initial_state, goal_state = a_star.load_board('board-test-1.txt')
-        board = a_star.initialize_board(board, goal_state)
+        board[0][0].initialize(board, goal_state, 0)
 
         # ================ NEIGHBORS ================ #
 
@@ -39,6 +39,8 @@ class TestAStar(unittest.TestCase):
 
         # Top left cell - West neighbor does not exist
 
+        board[1][2].initialize(board, goal_state, 0)
+
         # Center cell - North neighbor
         self.assertEqual(board[1][2].neighbors[0].x, 2)
         self.assertEqual(board[1][2].neighbors[0].y, 0)
@@ -52,6 +54,8 @@ class TestAStar(unittest.TestCase):
         # Center cell - West neighbor
         self.assertEqual(board[1][2].neighbors[2].x, 1)
         self.assertEqual(board[1][2].neighbors[2].y, 1)
+
+        board[2][4].initialize(board, goal_state, 0)
 
         # Bottom right cell - North neighbor
         self.assertEqual(board[2][4].neighbors[0].x, 4)
@@ -68,8 +72,7 @@ class TestAStar(unittest.TestCase):
         # ================ HEURISTIC FUNCTIONS ================ #
         self.assertEqual(board[1][0].h, 1)
         # self.assertEqual(round(board[1][1].h), 1.41) # Euclidean distance
-        self.assertEqual(round(board[1][1].h), 2) # Manhattan distance
-
+        self.assertEqual(round(board[1][1].h), 2)  # Manhattan distance
 
 
 if __name__ == '__main__':
