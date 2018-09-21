@@ -14,3 +14,6 @@ If your monitor's width is less than 1820px, you can change the canvas width in 
 1. Remove comment on start_breadth_first(0) in bottom of a_star.py
 2. Add comment on start_a_star(0) in bottom of a_star.py
 3. Run a_star.py
+
+### How to change board
+1. Edit parameter in line 218 in a_star.py

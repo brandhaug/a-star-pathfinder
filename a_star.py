@@ -215,7 +215,7 @@ def render(board, current_cell, open_set, closed_set):
     root.update()
 
 
-board, initial_state_coordinates, goal_state_coordinates = load_board('board-2-4.txt')
+board, initial_state_coordinates, goal_state_coordinates = load_board('board-2-1.txt')
 
 root = Tk()
 root.title('A* Algorithm')
